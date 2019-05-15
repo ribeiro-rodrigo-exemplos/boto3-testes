@@ -19,7 +19,7 @@ response = client.request_spot_fleet(
     SpotFleetRequestConfig={
         'IamFleetRole': IAM_FLEET_ROLE,
         'SpotPrice': '0.30',
-        'TargetCapacity': 1,
+        'TargetCapacity': 2,
         'LaunchSpecifications': [
             {
                 'SecurityGroups': [
