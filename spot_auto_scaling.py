@@ -40,7 +40,7 @@ def obter_imagem_id(imagem_nome, client):
 
 def criar_launch_specification(tipos_instancia, imagem_id):
 
-    security_group_id = 'ami-0b727a1fcb3da4c5c'
+    security_group_id = 'sg-d35827a9'
     subnet = 'subnet-747f573d'
     specifications = []
 
@@ -69,10 +69,9 @@ def criar_spot_fleet(imagem_id, client):
 
     response = client.request_spot_fleet(
         SpotFleetRequestConfig={
-            'OnDemandFulfilledCapacity': 2.0,
             'IamFleetRole': iam_fleet_role,
             'SpotPrice': preco_spot,
-            'TargetCapacity': 3,
+            'TargetCapacity': 1,
             'LaunchSpecifications': launch_specifications
         }
     )
