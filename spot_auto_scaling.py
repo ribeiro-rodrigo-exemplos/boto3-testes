@@ -114,22 +114,38 @@ def cancelar_spot_fleet(spot_fleet_ids,client):
 
     return resposta
 
+def aumentar_escala():
+    return None 
+
+def diminuir_escala():
+    return None
+
+def precisa_escalar(quantidade_mensagens,spot_fleets):
+    quantidade_de_spots = len(spot_fleets)
+    
+    return True 
 
 def __main__():
-    # obter_mensagens_rabbit()
-    # client = boto3.client('ec2')
-    # criar_spot_fleet('ami-0a313d6098716f372', client)
-    # print(obter_spot_fleets(client))
-    # cancelar_spot_fleet(['sfr-68907490-8515-4587-9870-df8c65facd0b'],client)
+
+    QUANTIDADE_MAXIMA_MENSAGENS = 30000
+
+    client = boto3.client('ec2')
+
+    quantidade_mensagens = obter_mensagens_rabbit()
+    spot_fleets = obter_spot_fleets(client)
+
+    if precisa_escalar(quantidade_mensagens,spot_fleets):
+        print('')
+
+
 
     return None
 
 
 __main__()
 
-
-# client = boto3.client('ec2')
-
-# imagem_id = obter_imagem_id('template-m2m-debian-9',client)
-
-# print(imagem_id)
+    # obter_mensagens_rabbit()
+    # client = boto3.client('ec2')
+    # criar_spot_fleet('ami-0a313d6098716f372', client)
+    # print(obter_spot_fleets(client))
+    # cancelar_spot_fleet(['sfr-68907490-8515-4587-9870-df8c65facd0b'],client)
