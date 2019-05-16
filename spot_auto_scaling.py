@@ -49,7 +49,13 @@ def criar_launch_specification(tipos_instancia, imagem_id):
             'SecurityGroups': [{'GroupId': security_group_id}],
             'ImageId': imagem_id,
             'InstanceType': tipo_instancia,
-            'SubnetId': subnet
+            'SubnetId': subnet,
+            'TagSpecifications': [
+                {   
+                    'ResourceType': 'instance',
+                    'Tags':[{'Key':'componente','Value':'worker-area'}]
+                }
+            ]
         }
         specifications.append(specification)
 
@@ -81,10 +87,42 @@ def criar_spot_fleet(imagem_id, client):
     return None
 
 
+def obter_spot_fleets(client):
+
+    response = client.describe_spot_fleet_requests()
+
+    spot_fleets = response['SpotFleetRequestConfigs']
+    spot_fleets_filtradas = []
+
+    for spot_fleet in spot_fleets:
+        launch_specifications = spot_fleet['SpotFleetRequestConfig']['LaunchSpecifications']
+        if spot_fleet['SpotFleetRequestState'] == 'active' and launch_specifications:
+            tag_specifications = launch_specifications[0]['TagSpecifications']
+            if tag_specifications and tag_specifications[0]['Tags'] and tag_specifications[0]['ResourceType'] == 'instance':
+                tags = tag_specifications[0]['Tags']
+                if {'Key': 'componente', 'Value': 'worker-area'} in tags:
+                    spot_fleets_filtradas.append(spot_fleets)
+
+    return tuple(spot_fleets_filtradas)
+
+
+def cancelar_spot_fleet(spot_fleet_ids,client):
+    resposta = client.cancel_spot_fleet_requests(
+        SpotFleetRequestIds=spot_fleet_ids,
+        TerminateInstances=True
+    )
+
+    return resposta
+
+
 def __main__():
     # obter_mensagens_rabbit()
-    client = boto3.client('ec2')
-    criar_spot_fleet('ami-0a313d6098716f372', client)
+    # client = boto3.client('ec2')
+    # criar_spot_fleet('ami-0a313d6098716f372', client)
+    # print(obter_spot_fleets(client))
+    # cancelar_spot_fleet(['sfr-68907490-8515-4587-9870-df8c65facd0b'],client)
+
+    return None
 
 
 __main__()
