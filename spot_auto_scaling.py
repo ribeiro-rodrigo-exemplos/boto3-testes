@@ -35,8 +35,6 @@ def obter_imagem_id(imagem_nome, client):
         if imagem['Name'] == imagem_nome:
             return imagem['ImageId']
 
-    return None
-
 
 def criar_launch_specification(tipos_instancia, imagem_id):
 
@@ -82,9 +80,7 @@ def criar_spot_fleet(imagem_id, client):
         }
     )
 
-    print(response)
-
-    return None
+    return response 
 
 
 def obter_spot_fleets(client):
@@ -107,45 +103,49 @@ def obter_spot_fleets(client):
 
 
 def cancelar_spot_fleet(spot_fleet_ids,client):
-    resposta = client.cancel_spot_fleet_requests(
+    response = client.cancel_spot_fleet_requests(
         SpotFleetRequestIds=spot_fleet_ids,
         TerminateInstances=True
     )
 
-    return resposta
+    return response
 
-def aumentar_escala():
+def escalar_para_cima(quantidade_maquinas_escalaveis,client):
+    print('devo escalar {} maquinas'.format(quantidade_maquinas_escalaveis))
     return None 
 
-def diminuir_escala():
-    return None
+def escalar_para_baixo(quantidade_maquinas_escalaveis,spot_fleets, client):
+    print('devo tirar {} maquinas'.format(quantidade_maquinas_escalaveis))
 
-def precisa_escalar(quantidade_mensagens,spot_fleets):
-    quantidade_de_spots = len(spot_fleets)
-    
-    return True 
+
+def avaliar_escalabilidade(quantidade_mensagens,quantidade_atual_de_spots,estado_desejado,spot_fleets,client):
+
+    quantidade_maquinas_escalaveis = estado_desejado['quantidade_spots'] - quantidade_atual_de_spots
+
+    if quantidade_maquinas_escalaveis > 0:
+        escalar_para_cima(quantidade_maquinas_escalaveis,client)
+    elif quantidade_maquinas_escalaveis < 0:  
+        escalar_para_baixo(quantidade_maquinas_escalaveis,spot_fleets,client)
+
 
 def __main__():
-
-    QUANTIDADE_MAXIMA_MENSAGENS = 30000
 
     client = boto3.client('ec2')
 
     quantidade_mensagens = obter_mensagens_rabbit()
     spot_fleets = obter_spot_fleets(client)
+    quantidade_de_spots = len(spot_fleets)
+    estados_desejados = [
+        {'quantidade_mensagens': range(0,3), 'quantidade_spots':0},
+        {'quantidade_mensagens': range(3,6), 'quantidade_spots':1}, 
+        {'quantidade_mensagens': range(6,9), 'quantidade_spots':2}
+    ]
 
-    if precisa_escalar(quantidade_mensagens,spot_fleets):
-        print('')
+    for estado_desejado in estados_desejados:
+        if quantidade_mensagens in estado_desejado['quantidade_mensagens'] and quantidade_de_spots != estado_desejado['quantidade_spots']:
+            avaliar_escalabilidade(quantidade_mensagens,quantidade_de_spots,estado_desejado,spot_fleets,client)
+            break 
 
-
-
-    return None
-
-
+ 
 __main__()
 
-    # obter_mensagens_rabbit()
-    # client = boto3.client('ec2')
-    # criar_spot_fleet('ami-0a313d6098716f372', client)
-    # print(obter_spot_fleets(client))
-    # cancelar_spot_fleet(['sfr-68907490-8515-4587-9870-df8c65facd0b'],client)
