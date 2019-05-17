@@ -97,7 +97,7 @@ def obter_spot_fleets(client):
             if tag_specifications and tag_specifications[0]['Tags'] and tag_specifications[0]['ResourceType'] == 'instance':
                 tags = tag_specifications[0]['Tags']
                 if {'Key': 'componente', 'Value': 'worker-area'} in tags:
-                    spot_fleets_filtradas.append(spot_fleets)
+                    spot_fleets_filtradas.append(spot_fleet)
 
     return tuple(spot_fleets_filtradas)
 
@@ -112,11 +112,21 @@ def cancelar_spot_fleet(spot_fleet_ids,client):
 
 def escalar_para_cima(quantidade_maquinas_escalaveis,client):
     print('devo escalar {} maquinas'.format(quantidade_maquinas_escalaveis))
-    return None 
+
+    for _ in range(0,quantidade_maquinas_escalaveis):
+        criar_spot_fleet('ami-0b727a1fcb3da4c5c',client)
+
 
 def escalar_para_baixo(quantidade_maquinas_escalaveis,spot_fleets, client):
     print('devo tirar {} maquinas'.format(quantidade_maquinas_escalaveis))
+    spot_fleets_ids = []
 
+    quantidade_maquinas_escalaveis = quantidade_maquinas_escalaveis * -1
+
+    for fleet in spot_fleets[:quantidade_maquinas_escalaveis]:
+        spot_fleets_ids.append(fleet['SpotFleetRequestId'])
+
+    cancelar_spot_fleet(spot_fleets_ids, client)
 
 def avaliar_escalabilidade(quantidade_mensagens,quantidade_atual_de_spots,estado_desejado,spot_fleets,client):
 
