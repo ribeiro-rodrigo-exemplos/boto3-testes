@@ -76,6 +76,7 @@ def criar_spot_fleet(imagem_id, client):
 
     response = client.request_spot_fleet(
         SpotFleetRequestConfig={
+            'AllocationStrategy': 'lowestPrice', 
             'IamFleetRole': iam_fleet_role,
             'SpotPrice': preco_spot,
             'TargetCapacity': 1,
