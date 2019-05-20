@@ -1,17 +1,21 @@
 import http.client
 import boto3
 import json
+import os 
+import sys
 from base64 import b64encode
 
 
 def obter_mensagens_rabbit():
 
-    usuario = 'guest'
-    senha = 'guest'
+    usuario = os.environ['USUARIO_RABBIT']
+    senha = os.environ['SENHA_RABBIT']
+    url_rabbit = os.environ['URL_RABBIT']
+
     base64_auth = b64encode('{}:{}'.format(usuario, senha).encode())
     headers = {'Authorization': 'Basic {}'.format(base64_auth.decode())}
 
-    connection = http.client.HTTPConnection('localhost:8080')
+    connection = http.client.HTTPConnection(url_rabbit)
     connection.request(
         'GET', '/api/queues/%2F/processador.area', headers=headers)
     resposta = connection.getresponse()
@@ -38,8 +42,8 @@ def obter_imagem_id(imagem_nome, client):
 
 def criar_launch_specification(tipos_instancia, imagem_id):
 
-    security_group_id = 'sg-d35827a9'
-    subnet = 'subnet-747f573d'
+    security_group_id = os.environ['SECURITY_GROUP_ID']
+    subnet = os.environ['SUBNET']
     specifications = []
 
     for tipo_instancia in tipos_instancia:
@@ -62,10 +66,9 @@ def criar_launch_specification(tipos_instancia, imagem_id):
 
 def criar_spot_fleet(imagem_id, client):
 
-    iam_fleet_role = 'arn:aws:iam::290389913576:role/AmazonEC2SpotFleetRole'
-    preco_spot = '0.30'
-    tipos_instancia = ('t3.micro', 't3.medium',
-                       't2.medium', 'c4.large', 'm4.large')
+    iam_fleet_role = os.environ['IAM_FLEET_ROLE']
+    preco_spot = os.environ['PRECO_SPOT']
+    tipos_instancia = ('t3.micro', 't3.small', 't3.medium','t3a.micro','t3a.small','t3a.medium')
 
     launch_specifications = criar_launch_specification(
         tipos_instancia, imagem_id)
@@ -114,14 +117,14 @@ def escalar_para_cima(quantidade_maquinas_escalaveis,client):
     print('devo escalar {} maquinas'.format(quantidade_maquinas_escalaveis))
 
     for _ in range(0,quantidade_maquinas_escalaveis):
-        criar_spot_fleet('ami-0b727a1fcb3da4c5c',client)
+        criar_spot_fleet(os.environ['AMI_ID'],client)
 
 
 def escalar_para_baixo(quantidade_maquinas_escalaveis,spot_fleets, client):
     print('devo tirar {} maquinas'.format(quantidade_maquinas_escalaveis))
     spot_fleets_ids = []
 
-    quantidade_maquinas_escalaveis = quantidade_maquinas_escalaveis * -1
+    quantidade_maquinas_escalaveis =  abs(quantidade_maquinas_escalaveis)
 
     for fleet in spot_fleets[:quantidade_maquinas_escalaveis]:
         spot_fleets_ids.append(fleet['SpotFleetRequestId'])
@@ -142,13 +145,15 @@ def __main__():
 
     client = boto3.client('ec2')
 
+    limite_mensagens = int(os.environ['LIMITE_MENSAGEM'])
     quantidade_mensagens = obter_mensagens_rabbit()
     spot_fleets = obter_spot_fleets(client)
     quantidade_de_spots = len(spot_fleets)
+    limite_final_de_mensagens = sum([limite_mensagens,limite_mensagens])
     estados_desejados = [
-        {'quantidade_mensagens': range(0,3), 'quantidade_spots':0},
-        {'quantidade_mensagens': range(3,6), 'quantidade_spots':1}, 
-        {'quantidade_mensagens': range(6,9), 'quantidade_spots':2}
+        {'quantidade_mensagens': range(0,limite_mensagens), 'quantidade_spots':0},
+        {'quantidade_mensagens': range(limite_mensagens,limite_final_de_mensagens), 'quantidade_spots':1}, 
+        {'quantidade_mensagens': range(limite_final_de_mensagens,sys.maxsize), 'quantidade_spots':2}
     ]
 
     for estado_desejado in estados_desejados:
